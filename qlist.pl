@@ -41,7 +41,7 @@ use v5.10;
 
 use Getopt::Long;
 Getopt::Long::Configure('bundling');            # grupowanie opcji programu
-use encoding 'utf8';
+#use encoding 'utf8';
 use English '-no_match_vars';
 use Linux::Distribution qw(distribution_name);
 use Carp;                                       # to replace die & warn by croak & carp
@@ -433,6 +433,7 @@ if ($rawpattern) {
         croak $EVAL_ERROR if $EVAL_ERROR;
     }
 }
+
 my $distribution_name = distribution_name;
 if (!$distribution_name){
     print q{I don't know this system}, "\n";
