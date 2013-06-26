@@ -1,0 +1,56 @@
+=pod
+
+=encoding utf8
+
+=head1 NAME
+
+qlist - listuj zawartość pakietu
+
+=head1 USAGE
+
+qlist [opcje] <pakiet> <wzorzec do wyszukania>
+
+=head1 DESCRIPTION
+
+Skrypt qlist pierwotnie był prostą nakładką na program I<qlist> z Gentoo. Aktualnie listuje zawartość pakietu i ewentualnie filtruje wyjście w poszukiwaniu wbudowanych wzorców lub podanego z linii poleceń. Wbudowane wzorce uaktywnia się przez podanie odpowiednich opcji np. opcja -b wyszukuje pliki binarne i skrypty w ścieżce.
+Opcje można grupować np. -bi lub -b -i. Można również wyszukiwać wśród plików pakietu według podanego wzorca, należy go podać nazwie pakietu.
+Pod gentoo wystarczy podać fragment nazwy pakietu i domyślnie wyszuka wśród wszystkich pasujących.
+
+qlist został przetestowany w Debianie, Gentoo i Archlinux.
+
+=head1 OPTIONS
+
+brak opcji - listuje zawartość pakietu
+
+I<-b> - wyświetla pliki 'binarne' to jest skrypty i programy zainstalowane w 'bin/'
+
+I<-m> - wyświetla strony podręcznika, pasuje do 'man/'
+
+I<-d> - wyświetla dokumentacje pakietu, pasuje do 'doc/'
+
+I<-i> - wyświetla strony info, pasuje do 'info/'
+
+I<-l> - wypisuje locale, pasuje do 'locale/'
+
+I<-p> - wyświetla pliki zakończone na: .png .xpm .svg .icons .jpg oraz pasujące do 'picture'
+
+I<-o> - wyświetla pliki które nie pasują do powyższych
+
+I<-g> - wyszukuje wzorca w zawartości pliku, tylko ASCII
+
+I<--no-color> - wyłącza kolorowanie pasującego wzorca
+
+I<--all> - domyślnie program pomija puste katalogi, z tą opcją wyświetla wszystko
+
+I<-h> - wyświetla pożywszy opis
+
+=head1 LICENSE AND COPYRIGHT
+
+Program  jest  dystrybuowany  na  zasadach  licencji  GNU  General  Public License.
+
+=head1 AUTHOR
+
+Piotr Rogoża rogoza.piotr@gmail.com
+
+=cut
+
