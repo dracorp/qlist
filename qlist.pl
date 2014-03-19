@@ -250,16 +250,15 @@ sub generate_list_arch { #{{{
 
     my ($package) = @_;
     if ( !$package ){
-        croak q{Packge not defined}, "\n";
+        die q{Packge not defined}, "\n";
     }
     my $list_files_ref = [];
 
     #usuń początkowe np. local/ z nazwy
     $package =~ s/^.*\///xms;
-    system "/usr/bin/pacman -Qq $package &>/dev/null";
-    if ( $CHILD_ERROR != 0 ) {
-        print"The package $package not found. Try use e.g. 'lspack $package' to search package\n";
-        exit 1;
+    system "/usr/bin/pacman -Qq $package > /dev/null 2>&1";
+    if ( $? >> 8 != 0 ) {
+        die "The package $package not found. Try use e.g. 'lspack $package' to search package\n";
     }
     open my ($fh), q{-|}, "/usr/bin/pacman -Ql $package"
         or croak qq{Cann't execute pacman: $ERRNO};
@@ -287,20 +286,19 @@ sub generate_list_debian { #{{{
 
     my ($package) = @_;
     if ( !$package ){
-        croak q{Packge dot defined}, "\n";
+        die q{Packge dot defined}, "\n";
     }
     my $list_files_ref = [];
-    system "/usr/bin/dpkg -l $package &>/dev/null";
-    if ( $CHILD_ERROR != 0 ) {
-        print "Package $package not found. Try use lspack $package\n";
-        exit 1;
+    system "/usr/bin/dpkg-query -W $package > /dev/null 2>&1";
+    if ( $? >> 8 != 0 ) {
+        die "Package $package not found. Try use lspack $package\n";
     }
     open my ($fh), q{-|}, "/usr/bin/dpkg -L $package"
         or croak qq{Cann't execute dpkg: $ERRNO\n};
     @{$list_files_ref} = <$fh>;
     close $fh or croak qq{Cann't close program dpkg: $ERRNO\n};
     shift @{$list_files_ref};                            # usuń pierwszy element, równy '/.'
-    @{$list_files_ref} = map { my $tmp = $_; chomp $$tmp; $tmp } @{$list_files_ref};
+    @{$list_files_ref} = map { my $tmp = $_; chomp $tmp; $tmp } @{$list_files_ref};
     return $list_files_ref;
 } ## --- end of generate_list_debian }}}
 
