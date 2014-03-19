@@ -40,6 +40,8 @@ I<-g> - wyszukuje wzorca w zawartości pliku, tylko ASCII
 
 I<--no-color> - wyłącza kolorowanie pasującego wzorca
 
+I<--color> - włącza kolorowanie pasującego wzorca
+
 I<--all> - domyślnie program pomija puste katalogi, z tą opcją wyświetla wszystko
 
 I<-h> - wyświetla pożywszy opis

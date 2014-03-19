@@ -84,6 +84,7 @@ GetOptions(
     'o'                => \$options{other},     # list other, not matched to above
     'g=s'              => \$options{grep},      # search in contents of files
     'no-color|nocolor' => \$options{nocolor},   # nie podświetlaj dopasowania
+    'color'            => \$options{color},     # podświetlaj dopasowania
     'case'             => \$options{case},
     'all'              => \$options{all},       # wyświetlaj wszystko, domyślnie pomija katalogi
     'h|help'           => \&help
@@ -117,7 +118,8 @@ sub help { #{{{
     print "\t-o list other files not belong to earlier listed options\n\n";
     print "There are other options:\n";
     print "\t-g search in files' content (use grep), works only with ASCII files\n";
-    print "\t--no-color - do not color line matched to pattern\n";
+    print "\t--no-color - do not color line matched to pattern [default]\n";
+    print "\t--color - color line matched to pattern\n";
     print"\t--all - by default, the program skips empty directories. This option displays all.\n";
     print "\t-h print this help\n";
     exit 0;
@@ -226,9 +228,9 @@ sub print_list { #{{{
     }
     for my $file ( @{$list_files_ref} ) {
 
-        print color 'bold white' if !$options{nocolor};
+        print color 'bold white' if $options{color};
         print $file;
-        print color 'reset' if !$options{nocolor};
+        print color 'reset' if $options{color};
     }
     return;
 } ## --- end of print_list }}}
@@ -378,11 +380,11 @@ sub grep_list { #{{{
     $max_length_number++;                       # for space and char '+'
     foreach my $filename ( keys %{$result} ) {
         foreach my $number_line ( keys %{ $result->{$filename} } ) {
-            print color 'bold white' if !$options{nocolor};
+            print color 'bold white' if $options{color};
             printf "%-$max_length_filename" . 's', "$filename";
-            print color 'green' if !$options{nocolor};
+            print color 'green' if $options{color};
             printf "%-$max_length_number" . 's',   "+$number_line";
-            print color 'reset' if !$options{nocolor};
+            print color 'reset' if $options{color};
             print $SPACE, $result->{$filename}->{$number_line}, "\n";
         }
     }
@@ -433,7 +435,6 @@ if ($rawpattern) {
         croak $EVAL_ERROR if $EVAL_ERROR;
     }
 }
-
 my $distribution_name = distribution_name;
 if (!$distribution_name){
     print q{I don't know this system}, "\n";
