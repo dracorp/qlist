@@ -301,6 +301,9 @@ sub generate_list_debian { #{{{
     @{$list_files_ref} = map { my $tmp = $_; chomp $tmp; $tmp } @{$list_files_ref};
     return $list_files_ref;
 } ## --- end of generate_list_debian }}}
+sub generate_list_linuxmint {
+    generate_list_debian(@_);
+}
 
 sub remove_empty_directories { #{{{
 
@@ -411,7 +414,7 @@ if ($rawpackage) {
 }
 
 if ($rawgrep_pattern) {
-    ($grep_pattern) = $rawgrep_pattern =~ m{^[_~\#\/\\|\w\s._-]+}gxms;
+    ($grep_pattern) = $rawgrep_pattern =~ m{^[%_~\#\/\\|\w\s._-]+}gxms;
     if ( $options{case} ) {
         $grep_pattern = eval { qr{$grep_pattern}oxms; };
         croak $EVAL_ERROR if $EVAL_ERROR;
