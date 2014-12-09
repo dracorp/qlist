@@ -40,27 +40,27 @@ use warnings;
 use v5.10;
 
 use Getopt::Long;
-Getopt::Long::Configure('bundling');            # grupowanie opcji programu
+Getopt::Long::Configure('bundling');    # grupowanie opcji programu
 #use encoding 'utf8';
 use English '-no_match_vars';
 use Linux::Distribution qw(distribution_name);
-use Carp;                                       # to replace die & warn by croak & carp
+use Carp;                               # to replace die & warn by croak & carp
 use Readonly;
 use Term::ANSIColor;
 
 #-------------------------------------------------------------------------------
 # O programie - About the program
 #-------------------------------------------------------------------------------
-my $NAME        = 'qlist';
-my $AUTHOR      = 'Piotr Rogoża';
-my $EMAIL       = 'rogoza.piotr@gmail.com';
-our $VERSION    = 1.5.1;
+my $NAME   = 'qlist';
+my $AUTHOR = 'Piotr Rogoża';
+my $EMAIL  = 'rogoza.piotr@gmail.com';
+our $VERSION = 1.5.1;
 
 #{{{ Don't modify below variables !!!
 #---------------------------------------------------------------------------
 # Startup parameters and global variables
 #---------------------------------------------------------------------------
-local $ENV{PATH} = '/usr/bin';                  # untainted PATH
+local $ENV{PATH} = '/usr/bin';    # untainted PATH
 
 # Global read-only variables
 Readonly my $SPACE => q{ };
@@ -74,39 +74,37 @@ my (%options);
 
 # Startup options
 GetOptions(
-    'b'                => \$options{binary},    # list binary
-    'm'                => \$options{man},       # list pages' man
-    'd'                => \$options{doc},       # list doc
-    'i'                => \$options{info},      # list pages' info
-    'e'                => \$options{etc},       # list /etc
-    'l'                => \$options{locale},    # list locales
-    'p'                => \$options{picture},   # list pictures
-    'o'                => \$options{other},     # list other, not matched to above
-    'g=s'              => \$options{grep},      # search in contents of files
-    'no-color|nocolor' => \$options{nocolor},   # nie podświetlaj dopasowania
-    'color'            => \$options{color},     # podświetlaj dopasowania
+    'b'                => \$options{binary},     # list binary
+    'm'                => \$options{man},        # list pages' man
+    'd'                => \$options{doc},        # list doc
+    'i'                => \$options{info},       # list pages' info
+    'e'                => \$options{etc},        # list /etc
+    'l'                => \$options{locale},     # list locales
+    'p'                => \$options{picture},    # list pictures
+    'o'                => \$options{other},      # list other, not matched to above
+    'g=s'              => \$options{grep},       # search in contents of files
+    'no-color|nocolor' => \$options{nocolor},    # nie podświetlaj dopasowania
+    'color'            => \$options{color},      # podświetlaj dopasowania
     'case'             => \$options{case},
-    'all'              => \$options{all},       # wyświetlaj wszystko, domyślnie pomija katalogi
+    'all'              => \$options{all},        # wyświetlaj wszystko, domyślnie pomija katalogi
     'h|help'           => \&help
 );
 
 #}}}
 #{{{  Functions
-sub max_length_str { #{{{
+sub max_length_str {                             #{{{
     my ($array_ref) = @_;
     my $max_length = 0;
-    foreach my $string ( @{$array_ref} ){
-        if ( length $string > $max_length ){
+    foreach my $string ( @{$array_ref} ) {
+        if ( length $string > $max_length ) {
             $max_length = length $string;
-        }
+        } ## end if ( length $string > ...)
     }
     return $max_length;
-} ## --- end of sub max_length_str }}}
-
+} ## end sub max_length_str }}}
 sub help { #{{{
     print "Usage: $NAME [package]|[pattern] -b -m -d -i -e -l -p -o -h -g \n";
-    print
-        "By default script $NAME lists package. If the pattern is defined then list is filtred to it\n";
+    print "By default script $NAME lists package. If the pattern is defined then list is filtred to it\n";
     print "Built-in pattern:\n";
     print "\t-b list binary files\n";
     print "\t-m list manual's files\n";
@@ -120,11 +118,10 @@ sub help { #{{{
     print "\t-g search in files' content (use grep), works only with ASCII files\n";
     print "\t--no-color - do not color line matched to pattern [default]\n";
     print "\t--color - color line matched to pattern\n";
-    print"\t--all - by default, the program skips empty directories. This option displays all.\n";
+    print "\t--all - by default, the program skips empty directories. This option displays all.\n";
     print "\t-h print this help\n";
     exit 0;
-} ## --- end of help }}}
-
+} ## end help }}}
 sub filter_list { #{{{
     #===  FUNCTION  ================================================================
     #         NAME:  filter_list
@@ -133,7 +130,7 @@ sub filter_list { #{{{
     my ( $pattern, $list_files_ref ) = @_;
     if ( ref $list_files_ref ne 'ARRAY' ) {
         croak qq{Expected references to array\n};
-    }
+    } ## end if ( ref $list_files_ref...)
 
     #-------------------------------------------------------------------------------
     #  Wbudowane wzorce - built-in patterns
@@ -149,38 +146,31 @@ sub filter_list { #{{{
     my $regex;
 
     if ( $options{other} ) {
-        $regex
-            = $binary . q{|}
-            . $man . q{|}
-            . $doc . q{|}
-            . $info . q{|}
-            . $etc . q{|}
-            . $locale . q{|}
-            . $picture;
-    }
+        $regex = $binary . q{|} . $man . q{|} . $doc . q{|} . $info . q{|} . $etc . q{|} . $locale . q{|} . $picture;
+    } ## end if ( $options{other} )
     else {
         if ( $options{binary} ) {
-            $regex= $regex ? $regex . q{|} . $binary : $binary;
-        }
+            $regex = $regex ? $regex . q{|} . $binary : $binary;
+        } ## end if ( $options{binary} )
         if ( $options{man} ) {
-            $regex= $regex ? $regex . q{|} . $man : $man;
-        }
+            $regex = $regex ? $regex . q{|} . $man : $man;
+        } ## end if ( $options{man} )
         if ( $options{doc} ) {
-            $regex= $regex ? $regex . q{|} . $doc : $doc;
-        }
+            $regex = $regex ? $regex . q{|} . $doc : $doc;
+        } ## end if ( $options{doc} )
         if ( $options{info} ) {
-            $regex= $regex ? $regex . q{|} . $info : $info;
-        }
+            $regex = $regex ? $regex . q{|} . $info : $info;
+        } ## end if ( $options{info} )
         if ( $options{etc} ) {
-            $regex= $regex ? $regex . q{|} . $etc : $etc;
-        }
+            $regex = $regex ? $regex . q{|} . $etc : $etc;
+        } ## end if ( $options{etc} )
         if ( $options{locale} ) {
-            $regex= $regex ? $regex . q{|} . $locale : $locale;
-        }
+            $regex = $regex ? $regex . q{|} . $locale : $locale;
+        } ## end if ( $options{locale} )
         if ( $options{picture} ) {
-            $regex= $regex ? $regex . q{|} . $picture : $picture;
-        }
-    }
+            $regex = $regex ? $regex . q{|} . $picture : $picture;
+        } ## end if ( $options{picture})
+    } ## end else [ if ( $options{other} )]
     if ($regex) {
 
         # jeśli podano opcję wyszukiwania o przefiltruj listę
@@ -188,13 +178,13 @@ sub filter_list { #{{{
 
             # przefiltruj listę w oparciu o opcję other, czyli reszta która nie pasuje do wbudowanych wzorców
             @{$list_files_ref} = grep { !/$regex/msx } @{$list_files_ref};
-        }
+        } ## end if ( $options{other} )
         else {
 
             # przefiltruj listę w oparciu o wbudowane wzorce
             @{$list_files_ref} = grep {/$regex/msx} @{$list_files_ref};
-        }
-    }
+        } ## end else [ if ( $options{other} )]
+    } ## end if ($regex)
     if ( $pattern and not $options{grep} ) {
 
         #jeśli podano wzorzec do wyszukania i nie podano opcji -g to wyszukaj wzorzec w liście
@@ -207,16 +197,15 @@ sub filter_list { #{{{
         #                $file =~ s/$pattern/$colors{red}$pattern$colors{nocolor}/;
         #            }
         #        }
-    }
+    } ## end if ( $pattern and not ...)
 
     # usuń puste katalogi chyba, że podano opcję --all
     if ( !$options{all} ) {
         remove_empty_directories($list_files_ref);
-    }
+    } ## end if ( !$options{all} )
 
     return;
-} ## --- end of sub filtelist_files_ref }}}
-
+} ## end sub filtelist_files_ref }}}
 sub print_list { #{{{
     #===  FUNCTION  ================================================================
     #         NAME:  print_list
@@ -225,7 +214,7 @@ sub print_list { #{{{
     my ($list_files_ref) = @_;
     if ( ref $list_files_ref ne 'ARRAY' ) {
         croak q{Expected references to array}, "\n";
-    }
+    } ## end if ( ref $list_files_ref...)
     for my $file ( @{$list_files_ref} ) {
 
         print color 'bold white' if $options{color};
@@ -233,10 +222,8 @@ sub print_list { #{{{
         print color 'reset' if $options{color};
     }
     return;
-} ## --- end of print_list }}}
-
+} ## end print_list }}}
 sub generate_list_arch { #{{{
-
     #===  FUNCTION  ================================================================
     #         NAME: generate_list_arch
     #      PURPOSE:
@@ -249,9 +236,9 @@ sub generate_list_arch { #{{{
     #===============================================================================
 
     my ($package) = @_;
-    if ( !$package ){
+    if ( !$package ) {
         die q{Packge not defined}, "\n";
-    }
+    } ## end if ( !$package )
     my $list_files_ref = [];
 
     #usuń początkowe np. local/ z nazwy
@@ -259,20 +246,18 @@ sub generate_list_arch { #{{{
     system "/usr/bin/pacman -Qq $package > /dev/null 2>&1";
     if ( $? >> 8 != 0 ) {
         die "The package $package not found. Try use e.g. 'lspack $package' to search package\n";
-    }
+    } ## end if ( $? >> 8 != 0 )
     open my ($fh), q{-|}, "/usr/bin/pacman -Ql $package"
         or croak qq{Cann't execute pacman: $ERRNO};
     @{$list_files_ref} = <$fh>;
     close $fh or croak qq{Cann't close pacman: $ERRNO};
     for my $filename ( @{$list_files_ref} ) {
         chomp $filename;
-        $filename =~ s{^\S+\s+}{}xms;            # usuwa nazwę pakietu i spację
+        $filename =~ s{^\S+\s+}{}xms;    # usuwa nazwę pakietu i spację
     }
     return $list_files_ref;
-} ## --- end of generate_list_arch }}}
-
+} ## end generate_list_arch }}}
 sub generate_list_debian { #{{{
-
     #===  FUNCTION  ================================================================
     #         NAME: generate_list_debian
     #      PURPOSE:
@@ -285,28 +270,26 @@ sub generate_list_debian { #{{{
     #===============================================================================
 
     my ($package) = @_;
-    if ( !$package ){
+    if ( !$package ) {
         die q{Packge dot defined}, "\n";
-    }
+    } ## end if ( !$package )
     my $list_files_ref = [];
     system "/usr/bin/dpkg-query -W $package > /dev/null 2>&1";
     if ( $? >> 8 != 0 ) {
         die "Package $package not found. Try use lspack $package\n";
-    }
+    } ## end if ( $? >> 8 != 0 )
     open my ($fh), q{-|}, "/usr/bin/dpkg -L $package"
         or croak qq{Cann't execute dpkg: $ERRNO\n};
     @{$list_files_ref} = <$fh>;
     close $fh or croak qq{Cann't close program dpkg: $ERRNO\n};
-    shift @{$list_files_ref};                            # usuń pierwszy element, równy '/.'
+    shift @{$list_files_ref};    # usuń pierwszy element, równy '/.'
     @{$list_files_ref} = map { my $tmp = $_; chomp $tmp; $tmp } @{$list_files_ref};
     return $list_files_ref;
-} ## --- end of generate_list_debian }}}
-sub generate_list_linuxmint {
+} ## end generate_list_debian }}}
+sub generate_list_linuxmint { #{{{
     generate_list_debian(@_);
-}
-
+} #}}}
 sub remove_empty_directories { #{{{
-
     #===  FUNCTION  ================================================================
     #         NAME:  remove_empty_directories
     #   PARAMETERS:  odwołanie do tablicy
@@ -315,23 +298,20 @@ sub remove_empty_directories { #{{{
     my ($list_files_ref) = @_;
     if ( ref $list_files_ref ne 'ARRAY' ) {
         croak qq{Expected references to array\n};
-    }
-    for my $count ( reverse 0 .. $#{$list_files_ref} ) { # lecimy od końca
+    } ## end if ( ref $list_files_ref...)
+    for my $count ( reverse 0 .. $#{$list_files_ref} ) {    # lecimy od końca
 
         #        chomp ${$list_files_ref}[$count];
-        if ( -d ${$list_files_ref}[$count] )
-        {           # usuń z listy katalogi jeśli nie podano opcji --all
+        if ( -d ${$list_files_ref}[$count] ) {              # usuń z listy katalogi jeśli nie podano opcji --all
             splice @{$list_files_ref}, $count, 1;
-        }
+        } ## end if ( -d ${$list_files_ref...})
         else {
             ${$list_files_ref}[$count] .= "\n";
-        }
+        } ## end else [ if ( -d ${$list_files_ref...})]
     }
     return;
-} ## --- end of remove_empty_directories }}}
-
+} ## end remove_empty_directories }}}
 sub grep_list { #{{{
-
     #===  FUNCTION  ================================================================
     #         NAME: grep_list
     #      PURPOSE:
@@ -344,54 +324,53 @@ sub grep_list { #{{{
     #===============================================================================
     my ( $pattern, $input_file_ref ) = @_;
     if ( !$pattern || !$input_file_ref ) {
-        croak q{Wrong call sub grep_list, excepted form: pattern, file},"\n";
-    }
+        croak q{Wrong call sub grep_list, excepted form: pattern, file}, "\n";
+    } ## end if ( !$pattern || !$input_file_ref)
     if ( !ref $input_file_ref eq 'ARRAY' ) {
         croak q{Excepted ref to array as second parametr}, "\n";
-    }
-    my ($max_length_filename,                   # max length of filename, for formated display
-        $max_length_number,                     # max length of number of row with matched pattern,
-        $result,                                # ref to hash with results
+    } ## end if ( !ref $input_file_ref...)
+    my ($max_length_filename,    # max length of filename, for formated display
+        $max_length_number,      # max length of number of row with matched pattern,
+        $result,                 # ref to hash with results
     );
     ( $max_length_number, $max_length_filename ) = ( 0, 0 );
 
     foreach my $file ( @{$input_file_ref} ) {
         chomp $file;
         if ( -T $file && -r $file ) {
-            open my ($fh), q{<}, $file 
+            open my ($fh), q{<}, $file
                 or croak q{Couldn't open the file: }, $file, "\n";
             while ( my $row = <$fh> ) {
                 if ( $row =~ m{$pattern} ) {
                     if ( length $file > $max_length_filename ) {
                         $max_length_filename = length $file;
-                    }
+                    } ## end if ( length $file > $max_length_filename)
                     if ( length $INPUT_LINE_NUMBER > $max_length_number ) {
                         $max_length_number = length $INPUT_LINE_NUMBER;
-                    }
+                    } ## end if ( length $INPUT_LINE_NUMBER...)
                     chomp $row;
                     $result->{$file}->{$INPUT_LINE_NUMBER} = $row;
-                }
+                } ## end if ( $row =~ m{$pattern})
             }
-            close $fh 
+            close $fh
                 or croak q{Couldn't close the file: }, $file, "\n";
-        }
+        } ## end if ( -T $file && -r $file)
     }
     my @files = keys %{$result};
-    $max_length_filename++;                     # for space
-    $max_length_number++;                       # for space and char '+'
+    $max_length_filename++;    # for space
+    $max_length_number++;      # for space and char '+'
     foreach my $filename ( keys %{$result} ) {
         foreach my $number_line ( keys %{ $result->{$filename} } ) {
             print color 'bold white' if $options{color};
             printf "%-$max_length_filename" . 's', "$filename";
             print color 'green' if $options{color};
-            printf "%-$max_length_number" . 's',   "+$number_line";
+            printf "%-$max_length_number" . 's', "+$number_line";
             print color 'reset' if $options{color};
             print $SPACE, $result->{$filename}->{$number_line}, "\n";
         }
     }
     return;
-} ## --- end of sub grep_list }}}
-
+} ## end sub grep_list }}}
 #}}}
 #---------------------------------------------------------------------------
 #  Main program
@@ -410,49 +389,49 @@ if ($rawpackage) {
     if ( !$package ) {
         print q{Package isn't defined or name you entered isn't allowed}, "\n";
         exit 1;
-    }
-}
+    } ## end if ( !$package )
+} ## end if ($rawpackage)
 
 if ($rawgrep_pattern) {
     ($grep_pattern) = $rawgrep_pattern =~ m{^[%_~\#\/\\|\w\s._-]+}gxms;
     if ( $options{case} ) {
         $grep_pattern = eval { qr{$grep_pattern}oxms; };
         croak $EVAL_ERROR if $EVAL_ERROR;
-    }
+    } ## end if ( $options{case} )
     else {
         $grep_pattern = eval { qr{$grep_pattern}ioxms; };
         croak $EVAL_ERROR if $EVAL_ERROR;
-    }
-}
+    } ## end else [ if ( $options{case} ) ]
+} ## end if ($rawgrep_pattern)
 
 if ($rawpattern) {
     ($pattern) = $rawpattern =~ m{^[~\\/|\w._-]+}gxms;
     if ( $options{case} ) {
         $pattern = eval { qr{$pattern}oxms; };
         croak $EVAL_ERROR if $EVAL_ERROR;
-    }
+    } ## end if ( $options{case} )
     else {
         $pattern = eval { qr{$pattern}ioxms; };
         croak $EVAL_ERROR if $EVAL_ERROR;
-    }
-}
+    } ## end else [ if ( $options{case} ) ]
+} ## end if ($rawpattern)
 my $distribution_name = distribution_name;
-if (!$distribution_name){
+if ( !$distribution_name ) {
     print q{I don't know this system}, "\n";
     exit;
-}
-my $distribution_sub =  'generate_list_' . $distribution_name;
-my $list_files = [];                            # ref of array, list of files belong to package
-if ( exists &$distribution_sub ){
+} ## end if ( !$distribution_name)
+my $distribution_sub = 'generate_list_' . $distribution_name;
+my $list_files       = [];                                      # ref of array, list of files belong to package
+if ( exists &$distribution_sub ) {
     {
         no strict 'refs';
         $list_files = &$distribution_sub($package);
     }
-}
+} ## end if ( exists &$distribution_sub)
 else {
     print q{I'm sorry but this system isn't supported}, "\n";
     exit;
-}
+} ## end else [ if ( exists &$distribution_sub)]
 if ( @{$list_files} > 0 ) {
 
     # filtrowanie listy wg. np. wbudowanych wzorców i wyszukiwanego wzorca
@@ -461,8 +440,8 @@ if ( @{$list_files} > 0 ) {
     # szukanie w zawartości i drukowanie lub same drukowanie na ekranie
     if ( $options{grep} ) {
         grep_list( $grep_pattern, $list_files );
-    }
+    } ## end if ( $options{grep} )
     else {
         print_list($list_files);
-    }
-}
+    } ## end else [ if ( $options{grep} ) ]
+} ## end if ( @{$list_files} > ...)
