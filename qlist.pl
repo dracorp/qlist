@@ -100,13 +100,13 @@ sub filter_list {    #{{{
     #  Wbudowane wzorce - built-in patterns
     #  Modyfikuj jeśli uważasz za stosowne - Modify if you think fit
     # -------------------------------------------------------------------------------
-    my $binary  = 'bin/|program/';
-    my $man     = 'man/?';
-    my $doc     = 'doc/';
-    my $info    = 'info/';
-    my $etc     = 'etc/';
-    my $locale  = 'locale/';
-    my $picture = '\.png|\.xpm|\.svg|icons/|\.jpg|pixmaps/';
+    my $binary  = qr{s?bin/|program/};
+    my $man     = qr{man/?};
+    my $doc     = qr{doc/};
+    my $info    = qr{info/};
+    my $etc     = qr{etc/};
+    my $locale  = qr{locale/};
+    my $picture = qr{\.png|\.xpm|\.svg|icons/|\.jpe?g|pixmaps/};
     my $regex;
 
     if ( $options{other} ) {
@@ -183,7 +183,7 @@ sub print_list {    #{{{
     for my $file ( @{$list_files_ref} ) {
 
         print color 'bold white' if $options{color};
-        print $file;
+        print $file, "\n";
         print color 'reset' if $options{color};
     }
     return;
@@ -275,9 +275,9 @@ sub remove_empty_directories {    #{{{
         if ( -d ${$list_files_ref}[$count] ) {              # usuń z listy katalogi jeśli nie podano opcji --all
             splice @{$list_files_ref}, $count, 1;
         }
-        else {
-            ${$list_files_ref}[$count] .= "\n";
-        }
+#        else {
+#            ${$list_files_ref}[$count] .= "\n";
+#        }
     }
     return;
 } ## end remove_empty_directories }}}
