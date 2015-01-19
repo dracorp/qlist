@@ -1,81 +1,70 @@
 #!/usr/bin/env perl
 #===============================================================================
-#
 #         FILE:  qlist.pl
 #
-#        USAGE:  ./qlist.pl
+#        USAGE:  ./qlist.pl package pattern [options]
 #
-#   DESCRIPTION:  Listuje zaswartość pakietu z możliwością wyszczególnienia plików pod względem manuali, dokumentacja, info, plików binarnych
-#				Nakładka na program qlist z pakietu app-portage/portage-utils
-# 				Jeśli za opcjami wystąpi jakiś wzorzec to bedzie on przeszukiwany pod względem obecności w nazwie plików.
+#   DESCRIPTION: Lists content of package and filters with buil-in input pattern.
+#               Based on qlist from Gentoo package app-portage/portage-utils
 #
-#      OPTIONS:  [package][pattern] [-b|-m|-d|-i|-e|-l|-p|-o] [-g|--no-color|-h|--all]
-# REQUIREMENTS:  perl
-#         BUGS:  ---
-#        NOTES:  ---
-#       AUTHOR:  Piotr Rogoża (piecia), rogoza.piotr@gmail.com
-#      COMPANY:  dracoRP
-#      CREATED:  29.04.2011 10:38:15
-#     MODIFIED:  09.06.2011 22:45:51
+#       AUTHOR: Piotr Rogoża (dracorp), piotr.r.public@gmail.com
+#           Id: $Id$
+#         Date: $Date$
+#     Revision: $Revision$
 #===============================================================================
+
+eval 'exec /usr/bin/perl -S $0 ${1+"$@"}'
+    if $running_under_some_shell;
+
 
 use strict;
 use warnings;
 use v5.10;
 
+use English '-no_match_vars';
+use Carp;                               # to replace die & warn by croak & carp
+
+use Linux::Distribution qw(distribution_name);
 use Getopt::Long;
 Getopt::Long::Configure('bundling');    # grouping options
-#use encoding 'utf8';
-use English '-no_match_vars';
-use Linux::Distribution qw(distribution_name);
-use Carp;                               # to replace die & warn by croak & carp
 use Readonly;
 use Term::ANSIColor;
 
-#-------------------------------------------------------------------------------
-# O programie - About the program
-#-------------------------------------------------------------------------------
+# About the program
 my $NAME   = 'qlist';
 my $AUTHOR = 'Piotr Rogoża';
-my $EMAIL  = 'rogoza.piotr@gmail.com';
+my $EMAIL  = 'piotr.r.public@gmail.com';
 
-our $VERSION = 1.5.1;
-
-#{{{ Don't modify below variables !!!
-#---------------------------------------------------------------------------
-# Startup parameters and global variables
-#---------------------------------------------------------------------------
-local $ENV{PATH} = '/usr/bin';    # untainted PATH
+our $VERSION = 1.6.0;
 
 # Global read-only variables
 Readonly my $SPACE => q{ };
 Readonly my $TAB   => qq{\t};
 
-# hash opcji startowych, nazwa systemu, lista plików należących do pakietu,
-# tablica @list na początku jest wypełniania nazwami plików należącymi do pakietu, w zaleożności od systemu są wywoływane różne polecenia
-# następnie jest filtrowana względem wzorca 'pattern' i wbudowanych wzorców
-# i na końcu wyświetlana
-my (%options);
-
+sub error {
+    my ($ERROR) = @_;
+    say "$PROGRAM_NAME $ERROR";
+    say "Try `$PROGRAM_NAME --help' for more information.";
+    exit 1;
+}
 # Startup options
+my (%options);
 GetOptions(
-    'b'                => \$options{binary},     # list binary
-    'm'                => \$options{man},        # list pages' man
-    'd'                => \$options{doc},        # list doc
-    'i'                => \$options{info},       # list pages' info
-    'e'                => \$options{etc},        # list /etc
-    'l'                => \$options{locale},     # list locales
-    'p'                => \$options{picture},    # list pictures
-    'o'                => \$options{other},      # list other, not matched to above
-    'g=s'              => \$options{grep},       # search in contents of files
-    'no-color|nocolor' => \$options{nocolor},    # nie podświetlaj dopasowania
-    'color'            => \$options{color},      # podświetlaj dopasowania
-    'case'             => \$options{case},
-    'all'              => \$options{all},        # wyświetlaj wszystko, domyślnie pomija katalogi
+    'b|bin'            => \$options{binary},     # list binary
+    'm|man'            => \$options{man},        # list pages' man
+    'd|doc'            => \$options{doc},        # list doc
+    'i|info'           => \$options{info},       # list pages' info
+    'e|etc'            => \$options{etc},        # list /etc
+    'l|locale'         => \$options{locale},     # list locales
+    'p|picture'        => \$options{picture},    # list pictures
+    'o|other'          => \$options{other},      # list other, not matched to above
+    'g|grep=s'         => \$options{grep},       # search in contents of files
+    'no-color|nocolor' => \$options{nocolor},    # do not color matched
+    'c|color'          => \$options{color},      # colors matched
+    'case'             => \$options{case},       # do not ignore case letter
+    'all'              => \$options{all},        # print all, by default omit directories
     'h|help'           => \&help
-);
-
-#}}}
+) or die("Error in command line arguments. Try $PROGRAM_NAME --help");
 #{{{  Functions
 sub max_length_str {                             #{{{
     my ($array_ref) = @_;
@@ -88,32 +77,20 @@ sub max_length_str {                             #{{{
     return $max_length;
 } ## end sub max_length_str }}}
 
-sub help {                                       #{{{
-    print "Usage: $NAME [package]|[pattern] -b -m -d -i -e -l -p -o -h -g \n";
-    print "By default script $NAME lists package. If the pattern is defined then list is filtred to it\n";
-    print "Built-in pattern:\n";
-    print "\t-b list binary files\n";
-    print "\t-m list manual's files\n";
-    print "\t-d list documentation's files\n";
-    print "\t-i list info's files\n";
-    print "\t-e list configuration files\n";
-    print "\t-l list locales\n";
-    print "\t-p list pictures, icons etc.\n";
-    print "\t-o list other files not belong to earlier listed options\n\n";
-    print "There are other options:\n";
-    print "\t-g search in files' content (use grep), works only with ASCII files\n";
-    print "\t--no-color - do not color line matched to pattern [default]\n";
-    print "\t--color - color line matched to pattern\n";
-    print "\t--all - by default, the program skips empty directories. This option displays all.\n";
-    print "\t-h print this help\n";
+sub usage {
+    system("pod2usage $PROGRAM_NAME");
+}
+
+sub help {
+    system("pod2text $PROGRAM_NAME");
     exit 0;
-} ## end help }}}
+}
 
 sub filter_list {    #{{{
-                     #===  FUNCTION  ================================================================
-                     #         NAME:  filter_list
-                     #  DESCRIPTION:  Filtruje tablicę zgodnie z parametrami zadanymi na starcie
-                     #===============================================================================
+    #===  FUNCTION  ================================================================
+    #         NAME:  filter_list
+    #  DESCRIPTION:  Filtruje tablicę zgodnie z parametrami zadanymi na starcie
+    #===============================================================================
     my ( $pattern, $list_files_ref ) = @_;
     if ( ref $list_files_ref ne 'ARRAY' ) {
         croak qq{Expected references to array\n};
@@ -195,10 +172,10 @@ sub filter_list {    #{{{
 } ## end sub filtelist_files_ref }}}
 
 sub print_list {    #{{{
-                    #===  FUNCTION  ================================================================
-                    #         NAME:  print_list
-                    #  DESCRIPTION:  Drukuje na ekranie tablicę, ewentualnie dodaje kolory itp
-                    #===============================================================================
+    #===  FUNCTION  ================================================================
+    #         NAME:  print_list
+    #  DESCRIPTION:  Drukuje na ekranie tablicę, ewentualnie dodaje kolory itp
+    #===============================================================================
     my ($list_files_ref) = @_;
     if ( ref $list_files_ref ne 'ARRAY' ) {
         croak q{Expected references to array}, "\n";
@@ -213,20 +190,21 @@ sub print_list {    #{{{
 } ## end print_list }}}
 
 sub generate_list_arch {    #{{{
-                            #===  FUNCTION  ================================================================
-                            #         NAME: generate_list_arch
-                            #      PURPOSE:
-                            #   PARAMETERS: ????
-                            #      RETURNS: ????
-                            #  DESCRIPTION: ????
-                            #       THROWS: no exceptions
-                            #     COMMENTS: none
-                            #     SEE ALSO: n/a
-                            #===============================================================================
+    #===  FUNCTION  ================================================================
+    #         NAME: generate_list_arch
+    #      PURPOSE:
+    #   PARAMETERS: ????
+    #      RETURNS: ????
+    #  DESCRIPTION: ????
+    #       THROWS: no exceptions
+    #     COMMENTS: none
+    #     SEE ALSO: n/a
+    #===============================================================================
 
     my ($package) = @_;
     if ( !$package ) {
-        die q{Packge not defined}, "\n";
+        usage;
+        exit 1;
     }
     my $list_files_ref = [];
 
@@ -248,16 +226,16 @@ sub generate_list_arch {    #{{{
 } ## end generate_list_arch }}}
 
 sub generate_list_debian {               #{{{
-        #===  FUNCTION  ================================================================
-        #         NAME: generate_list_debian
-        #      PURPOSE:
-        #   PARAMETERS: ????
-        #      RETURNS: ????
-        #  DESCRIPTION: ????
-        #       THROWS: no exceptions
-        #     COMMENTS: none
-        #     SEE ALSO: n/a
-        #===============================================================================
+    #===  FUNCTION  ================================================================
+    #         NAME: generate_list_debian
+    #      PURPOSE:
+    #   PARAMETERS: ????
+    #      RETURNS: ????
+    #  DESCRIPTION: ????
+    #       THROWS: no exceptions
+    #     COMMENTS: none
+    #     SEE ALSO: n/a
+    #===============================================================================
 
     my ($package) = @_;
     if ( !$package ) {
@@ -282,11 +260,11 @@ sub generate_list_linuxmint {    #{{{
 }    #}}}
 
 sub remove_empty_directories {    #{{{
-                                  #===  FUNCTION  ================================================================
-                                  #         NAME:  remove_empty_directories
-                                  #   PARAMETERS:  odwołanie do tablicy
-                                  #  DESCRIPTION:  usuwa puste katalogi z listy chyba że podano opcję --all
-                                  #===============================================================================
+    #===  FUNCTION  ================================================================
+    #         NAME:  remove_empty_directories
+    #   PARAMETERS:  odwołanie do tablicy
+    #  DESCRIPTION:  usuwa puste katalogi z listy chyba że podano opcję --all
+    #===============================================================================
     my ($list_files_ref) = @_;
     if ( ref $list_files_ref ne 'ARRAY' ) {
         croak qq{Expected references to array\n};
@@ -305,16 +283,16 @@ sub remove_empty_directories {    #{{{
 } ## end remove_empty_directories }}}
 
 sub grep_list {                                             #{{{
-        #===  FUNCTION  ================================================================
-        #         NAME: grep_list
-        #      PURPOSE:
-        #   PARAMETERS: pattern, ref to array of files
-        #      RETURNS: none
-        #  DESCRIPTION: search in file list for a pattern
-        #       THROWS: no exceptions
-        #     COMMENTS: none
-        #     SEE ALSO: n/a
-        #===============================================================================
+    #===  FUNCTION  ================================================================
+    #         NAME: grep_list
+    #      PURPOSE:
+    #   PARAMETERS: pattern, ref to array of files
+    #      RETURNS: none
+    #  DESCRIPTION: search in file list for a pattern
+    #       THROWS: no exceptions
+    #     COMMENTS: none
+    #     SEE ALSO: n/a
+    #===============================================================================
     my ( $pattern, $input_file_ref ) = @_;
 
     if ( !$pattern || !$input_file_ref ) {
@@ -366,16 +344,15 @@ sub grep_list {                                             #{{{
     return;
 } ## end sub grep_list }}}
 #}}}
-#---------------------------------------------------------------------------
 #  Main program
-#---------------------------------------------------------------------------
 my ( $package, $pattern, $grep_pattern );
 
 # get name of package and optional pattern to filter list
 my ( $rawpackage, $rawpattern ) = @ARGV;
 
 # get grep_pattern
-my $rawgrep_pattern = $options{grep} if $options{grep};
+my $rawgrep_pattern;
+$rawgrep_pattern = $options{grep} if $options{grep};
 
 # untainted $package, $pattern and $grep_pattern
 if ($rawpackage) {
@@ -409,13 +386,15 @@ if ($rawpattern) {
         croak $EVAL_ERROR if $EVAL_ERROR;
     }
 } ## end if ($rawpattern)
+
 my $distribution_name = distribution_name;
 if ( !$distribution_name ) {
     print q{I don't know this system}, "\n";
-    exit;
+    exit 1;
 }
 my $distribution_sub = 'generate_list_' . $distribution_name;
 my $list_files       = [];                                      # ref of array, list of files belong to package
+
 if ( exists &$distribution_sub ) {
     {
         no strict 'refs';
@@ -439,3 +418,128 @@ if ( @{$list_files} > 0 ) {
         print_list($list_files);
     }
 } ## end if ( @{$list_files} > ...)
+
+__END__
+
+=pod
+
+=encoding utf8
+
+=head1 NAME
+
+qlist - lists content of package
+
+=head1 SYNOPSIS
+
+B<qlist> [package] [pattern]
+[B<-b|--bin>]
+[B<-m|--man>]
+[B<-d|--doc>]
+[B<-i|--info>]
+[B<-e|--etc>]
+[B<-l|--locale>]
+[B<-p|--picture>]
+[B<-o|--other>]
+[B<--all>]
+[B<--case>]
+[B<-g|--grep> I<pattern>]
+
+[B<--no-color|--nocolor>]
+[B<--color>]
+[B<-h|--help>]
+
+=head1 DESCRIPTION
+
+I<qlist> lists content of a package on many Operating Systems. Originally was simple wrapper on I<qlist> program from Gentoo.
+At the moment program lists content of a package and filter according with built-in or given pattern.
+Built-in pattern become active through program's options. Options can group.
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-b>, B<--bin>
+
+Prints 'binary' files for pathes I<'s?bin/'>
+
+=item B<-m>, B<--man>
+
+Prints man pages, matched to I<'man/'>
+
+=item B<-d>, B<--doc>
+
+Prints documentation, matched to I<'doc/'>
+
+=item B<-i>, B<--info>
+
+Prints info pages, matched to I<'info/'>
+
+=item B<-l>, B<--locale>
+
+Prints locale's files, matched to I<'locale/'>
+
+=item B<-p>, B<--picture>
+
+Prints files ending on: .png .xpm .svg .icons .jpg and matched to 'picture'
+
+=item B<-o>, B<--other>
+
+Prints all files not matched to above patterns
+
+=item B<-g> I<pattern>, B<--grep> I<patter>
+
+Searches pattern in content of package's files, only ASCII
+
+=item B<--no-color>, B<--nocolor>
+
+Disable color
+
+=item B<--color>
+
+Surround the matched strings with  escape  sequences  to  display  them  in  color on the terminal.
+
+=item B<--all>
+
+By default program omit empty directories, with this option prints all.
+
+=item B<--case>
+
+Do not ignore case letter for patterns: package and grep.
+
+=item B<-h>, B<--color>
+
+Prints this help
+
+=back
+
+=head1 EXAMPLES
+
+To display content of mc package:
+
+    qlist mc
+
+To search 'charset' pattern:
+
+    qlist mc charset
+
+To display installed man pages:
+
+    qlist mc -m
+
+=head1 SUPPORTED OS
+
+I<qlist> was tested on Debian, Gentoo and Archlinux.
+
+=head1 LICENSE AND COPYRIGHT
+
+Program is distributed as-is
+
+=head1 TODO
+
+As in Gentoo: Pod gentoo wystarczy podać fragment nazwy pakietu i domyślnie wyszuka wśród wszystkich pasujących.
+
+=head1 AUTHOR
+
+Piotr Rogoża <piotr.r.public@gmail.com>
+
+=cut
