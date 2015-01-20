@@ -10,7 +10,8 @@
 #       AUTHOR: Piotr Rogoża (dracorp), piotr.r.public@gmail.com
 #           Id: $Id$
 #         Date: $Date$
-#     Revision: $Revision$
+#     Revision: $Revision: 16
+ $
 #===============================================================================
 
 eval 'exec /usr/bin/perl -wS $0 ${1+"$@"}'
