@@ -13,40 +13,31 @@
 #     Revision: $Revision$
 #===============================================================================
 
-eval 'exec /usr/bin/perl -S $0 ${1+"$@"}'
+eval 'exec /usr/bin/perl -wS $0 ${1+"$@"}'
     if $running_under_some_shell;
-
 
 use strict;
 use warnings;
-use v5.10;
+#use v5.10;
 
 use English '-no_match_vars';
 use Carp;                               # to replace die & warn by croak & carp
 
-use Linux::Distribution qw(distribution_name);
 use Getopt::Long;
 Getopt::Long::Configure('bundling');    # grouping options
 use Readonly;
 use Term::ANSIColor;
 
 # About the program
-my $NAME   = 'qlist';
-my $AUTHOR = 'Piotr Rogoża';
-my $EMAIL  = 'piotr.r.public@gmail.com';
-
-our $VERSION = 1.6.0;
+my $NAME        = 'qlist';
+my $AUTHOR      = 'Piotr Rogoża';
+my $EMAIL       = 'piotr.r.public@gmail.com';
+our $VERSION    = 1.6.0;
 
 # Global read-only variables
 Readonly my $SPACE => q{ };
 Readonly my $TAB   => qq{\t};
 
-sub error {
-    my ($ERROR) = @_;
-    say "$PROGRAM_NAME $ERROR";
-    say "Try `$PROGRAM_NAME --help' for more information.";
-    exit 1;
-}
 # Startup options
 my (%options);
 GetOptions(
@@ -63,10 +54,33 @@ GetOptions(
     'c|color'          => \$options{color},      # colors matched
     'case'             => \$options{case},       # do not ignore case letter
     'all'              => \$options{all},        # print all, by default omit directories
+    'o|os=s'           => \$options{os},
     'h|help'           => \&help
 ) or die("Error in command line arguments. Try $PROGRAM_NAME --help");
-#{{{  Functions
-sub max_length_str {                             #{{{
+if(!$options{os}){
+    require Linux::Distribution;
+    Linux::Distribution->import(qw(distribution_name));
+}
+#{{{ Subroutines
+sub error { #{{{2
+#===  FUNCTION  ================================================================
+#         NAME: error
+#   PARAMETERS: Error message to display
+#      RETURNS: none
+#  DESCRIPTION: Displays error and exit
+#===============================================================================
+    my ($ERROR) = @_;
+    print "$PROGRAM_NAME $ERROR\n";
+    print "Try `$PROGRAM_NAME --help' for more information.\n";
+    exit 1;
+} # end of sub error }}}
+sub max_length_str { #{{{2
+#===  FUNCTION  ================================================================
+#         NAME: max_length_str
+#      PURPOSE: Return maximal length for list
+#   PARAMETERS: ref to array
+#      RETURNS: int
+#===============================================================================
     my ($array_ref) = @_;
     my $max_length = 0;
     foreach my $string ( @{$array_ref} ) {
@@ -76,20 +90,25 @@ sub max_length_str {                             #{{{
     }
     return $max_length;
 } ## end sub max_length_str }}}
-
-sub usage {
+sub usage { #{{{2
+#===  FUNCTION  ================================================================
+#         NAME: usage
+#      PURPOSE: Display POD usage for the program
+#===============================================================================
     system("pod2usage $PROGRAM_NAME");
-}
-
-sub help {
+} # end of sub usage }}}
+sub help { #{{{2
+#===  FUNCTION  ================================================================
+#         NAME: help
+#      PURPOSE: Display POD help for the program and exit with 0
+#===============================================================================
     system("pod2text $PROGRAM_NAME");
     exit 0;
-}
-
-sub filter_list {    #{{{
+} # end of sub help }}}
+sub filter_list { #{{{2
     #===  FUNCTION  ================================================================
     #         NAME:  filter_list
-    #  DESCRIPTION:  Filtruje tablicę zgodnie z parametrami zadanymi na starcie
+    #  DESCRIPTION:  Filters array acording with built-in patterns
     #===============================================================================
     my ( $pattern, $list_files_ref ) = @_;
     if ( ref $list_files_ref ne 'ARRAY' ) {
@@ -97,8 +116,8 @@ sub filter_list {    #{{{
     }
 
     #-------------------------------------------------------------------------------
-    #  Wbudowane wzorce - built-in patterns
-    #  Modyfikuj jeśli uważasz za stosowne - Modify if you think fit
+    #  Built-in patterns
+    #  Modify if you think fit it
     # -------------------------------------------------------------------------------
     my $binary  = qr{s?bin/|program/};
     my $man     = qr{man/?};
@@ -136,45 +155,34 @@ sub filter_list {    #{{{
         }
     } ## end else [ if ( $options{other} )]
     if ($regex) {
-
-        # jeśli podano opcję wyszukiwania o przefiltruj listę
         if ( $options{other} ) {
 
-            # przefiltruj listę w oparciu o opcję other, czyli reszta która nie pasuje do wbudowanych wzorców
+            # filters list basis of option other, everything else which not pass to built-in patterns
             @{$list_files_ref} = grep { !/$regex/msx } @{$list_files_ref};
         }
         else {
 
-            # przefiltruj listę w oparciu o wbudowane wzorce
+            # filters list basis of built-in patterns
             @{$list_files_ref} = grep {/$regex/msx} @{$list_files_ref};
         }
     } ## end if ($regex)
     if ( $pattern and not $options{grep} ) {
 
-        #jeśli podano wzorzec do wyszukania i nie podano opcji -g to wyszukaj wzorzec w liście
+        # if given pattern to find and no given -g option
         @{$list_files_ref} = grep {/$pattern/} @{$list_files_ref};
-
-        #        if ( not defined $options{nocolor} ) {
-        #            #kolorowanie listy jeśli nie podano opcji --no-color
-        #            #zamień każdy patter na pokolorowany pattern w $_ i umieść nowy $_ w list_files_ref
-        #            for my $file ( @{$list_files_ref} ) {
-        #                $file =~ s/$pattern/$colors{red}$pattern$colors{nocolor}/;
-        #            }
-        #        }
     } ## end if ( $pattern and not ...)
 
-    # usuń puste katalogi chyba, że podano opcję --all
+    # remove empty directories unless given --all option
     if ( !$options{all} ) {
         remove_empty_directories($list_files_ref);
     }
 
     return;
-} ## end sub filtelist_files_ref }}}
-
-sub print_list {    #{{{
+} # end sub filtelist_files_ref }}}
+sub print_list { #{{{2
     #===  FUNCTION  ================================================================
     #         NAME:  print_list
-    #  DESCRIPTION:  Drukuje na ekranie tablicę, ewentualnie dodaje kolory itp
+    #  DESCRIPTION:  Prints list with optional colors
     #===============================================================================
     my ($list_files_ref) = @_;
     if ( ref $list_files_ref ne 'ARRAY' ) {
@@ -187,19 +195,40 @@ sub print_list {    #{{{
         print color 'reset' if $options{color};
     }
     return;
-} ## end print_list }}}
+} # end print_list }}}
+sub generate_list_aix { #{{{2
+#===  FUNCTION  ================================================================
+#         NAME: generate_list_aix
+#   PARAMETERS: package name
+#      RETURNS: ????
+#  DESCRIPTION: Generate list of files that belong to a package for AIX systems
+#===============================================================================
+    my ($package) = @_;
 
-sub generate_list_arch {    #{{{
-    #===  FUNCTION  ================================================================
-    #         NAME: generate_list_arch
-    #      PURPOSE:
-    #   PARAMETERS: ????
-    #      RETURNS: ????
-    #  DESCRIPTION: ????
-    #       THROWS: no exceptions
-    #     COMMENTS: none
-    #     SEE ALSO: n/a
-    #===============================================================================
+    if ( !$package ) {
+        usage;
+        exit 1;
+    }
+    my $list_files_ref = [];
+
+    #rpm
+    system "rpm -q $package > /dev/null 2>&1";
+    if ( $? >> 8 != 0 ) {
+        die "The package $package not found.\n";
+    }
+    open my ($fh), q{-|}, "rpm -ql $package"
+        or croak qq{Cann't execute rpm: $ERRNO};
+    @{$list_files_ref} = <$fh>;
+    close $fh or croak qq{Cann't close rpm: $ERRNO};
+    #lslpp
+} # end of sub generate_list_aix }}}
+sub generate_list_arch { #{{{2
+#===  FUNCTION  ================================================================
+#         NAME: generate_list_arch
+#   PARAMETERS: package naem
+#      RETURNS: ref to list
+#  DESCRIPTION: Generate list of files that belong to a package for ArchLinux systems
+#===============================================================================
 
     my ($package) = @_;
     if ( !$package ) {
@@ -208,7 +237,7 @@ sub generate_list_arch {    #{{{
     }
     my $list_files_ref = [];
 
-    #usuń początkowe np. local/ z nazwy
+    # remove leadeing 'local/' from name
     $package =~ s/^.*\///xms;
     system "/usr/bin/pacman -Qq $package > /dev/null 2>&1";
     if ( $? >> 8 != 0 ) {
@@ -220,22 +249,18 @@ sub generate_list_arch {    #{{{
     close $fh or croak qq{Cann't close pacman: $ERRNO};
     for my $filename ( @{$list_files_ref} ) {
         chomp $filename;
-        $filename =~ s{^\S+\s+}{}xms;    # usuwa nazwę pakietu i spację
+        # remove package's name and spaces
+        $filename =~ s{^\S+\s+}{}xms;
     }
     return $list_files_ref;
-} ## end generate_list_arch }}}
-
-sub generate_list_debian {               #{{{
-    #===  FUNCTION  ================================================================
-    #         NAME: generate_list_debian
-    #      PURPOSE:
-    #   PARAMETERS: ????
-    #      RETURNS: ????
-    #  DESCRIPTION: ????
-    #       THROWS: no exceptions
-    #     COMMENTS: none
-    #     SEE ALSO: n/a
-    #===============================================================================
+} # end generate_list_arch }}}
+sub generate_list_debian { #{{{2
+#===  FUNCTION  ================================================================
+#         NAME: generate_list_debian
+#   PARAMETERS: package naem
+#      RETURNS: ref to list
+#  DESCRIPTION: Generate list of files that belong to a package for Debian systems
+#===============================================================================
 
     my ($package) = @_;
     if ( !$package ) {
@@ -250,49 +275,45 @@ sub generate_list_debian {               #{{{
         or croak qq{Cann't execute dpkg: $ERRNO\n};
     @{$list_files_ref} = <$fh>;
     close $fh or croak qq{Cann't close program dpkg: $ERRNO\n};
-    shift @{$list_files_ref};    # usuń pierwszy element, równy '/.'
+    # usuń pierwszy element, równy '/.'
+    shift @{$list_files_ref};
     @{$list_files_ref} = map { my $tmp = $_; chomp $tmp; $tmp } @{$list_files_ref};
     return $list_files_ref;
-} ## end generate_list_debian }}}
-
-sub generate_list_linuxmint {    #{{{
+} # end generate_list_debian }}}
+sub generate_list_linuxmint { #{{{2
+#===  FUNCTION  ================================================================
+#         NAME: generate_list_debian
+#   PARAMETERS: package naem
+#      RETURNS: ref to list
+#  DESCRIPTION: Generate list of files that belong to a package for LinuxMint systems
+#===============================================================================
     generate_list_debian(@_);
-}    #}}}
-
-sub remove_empty_directories {    #{{{
-    #===  FUNCTION  ================================================================
-    #         NAME:  remove_empty_directories
-    #   PARAMETERS:  odwołanie do tablicy
-    #  DESCRIPTION:  usuwa puste katalogi z listy chyba że podano opcję --all
-    #===============================================================================
+} # end of sub generate_list_linuxmint }}}
+sub remove_empty_directories { #{{{2
+#===  FUNCTION  ================================================================
+#         NAME:  remove_empty_directories
+#   PARAMETERS:  ref to array
+#  DESCRIPTION:  Removes empty directories from list
+#===============================================================================
     my ($list_files_ref) = @_;
     if ( ref $list_files_ref ne 'ARRAY' ) {
         croak qq{Expected references to array\n};
     }
-    for my $count ( reverse 0 .. $#{$list_files_ref} ) {    # lecimy od końca
-
-        #        chomp ${$list_files_ref}[$count];
-        if ( -d ${$list_files_ref}[$count] ) {              # usuń z listy katalogi jeśli nie podano opcji --all
+    for my $count ( reverse 0 .. $#{$list_files_ref} ) {
+        # chomp ${$list_files_ref}[$count];
+        if ( -d ${$list_files_ref}[$count] ) {
+            # remove directories from list
             splice @{$list_files_ref}, $count, 1;
         }
-#        else {
-#            ${$list_files_ref}[$count] .= "\n";
-#        }
     }
     return;
-} ## end remove_empty_directories }}}
-
-sub grep_list {                                             #{{{
-    #===  FUNCTION  ================================================================
-    #         NAME: grep_list
-    #      PURPOSE:
-    #   PARAMETERS: pattern, ref to array of files
-    #      RETURNS: none
-    #  DESCRIPTION: search in file list for a pattern
-    #       THROWS: no exceptions
-    #     COMMENTS: none
-    #     SEE ALSO: n/a
-    #===============================================================================
+} # end remove_empty_directories }}}
+sub grep_list { #{{{2
+#===  FUNCTION  ================================================================
+#         NAME: grep_list
+#   PARAMETERS: pattern, ref to array
+#  DESCRIPTION: search in file list for a pattern
+#===============================================================================
     my ( $pattern, $input_file_ref ) = @_;
 
     if ( !$pattern || !$input_file_ref ) {
@@ -342,7 +363,7 @@ sub grep_list {                                             #{{{
         }
     }
     return;
-} ## end sub grep_list }}}
+} # end sub grep_list }}}
 #}}}
 #  Main program
 my ( $package, $pattern, $grep_pattern );
@@ -387,19 +408,27 @@ if ($rawpattern) {
     }
 } ## end if ($rawpattern)
 
-my $distribution_name = distribution_name;
+# Take distribution name from command line
+my $distribution_name;
+# sub from Linux::Distribution
+my $distribution_sub = \&{'distribution_name'};
+if ( $options{os} ){
+    $distribution_name = lc $options{os};
+}
+# or find
+elsif ( exists &$distribution_sub ){
+    $distribution_name = &$distribution_sub;
+}
+
 if ( !$distribution_name ) {
     print q{I don't know this system}, "\n";
     exit 1;
 }
-my $distribution_sub = 'generate_list_' . $distribution_name;
+$distribution_sub = \&{'generate_list_' . $distribution_name};
 my $list_files       = [];                                      # ref of array, list of files belong to package
 
 if ( exists &$distribution_sub ) {
-    {
-        no strict 'refs';
-        $list_files = &$distribution_sub($package);
-    }
+    $list_files = &$distribution_sub($package);
 } ## end if ( exists &$distribution_sub)
 else {
     print q{I'm sorry but this system isn't supported}, "\n";
@@ -536,7 +565,7 @@ Program is distributed as-is
 
 =head1 TODO
 
-As in Gentoo: Pod gentoo wystarczy podać fragment nazwy pakietu i domyślnie wyszuka wśród wszystkich pasujących.
+As in Gentoo: Pod gentoo wystarczy podac fragment nazwy pakietu i domyslnie wyszuka wsrod wszystkich pasujacych.
 
 =head1 AUTHOR
 
