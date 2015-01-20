@@ -1,6 +1,8 @@
 **qlist** lists content of a package with filtering ability, such as: manual pages, documentation, info pages, binary files etc.
 The program inspired by qlist from app-portage/portage-utils from Gentoo OS.
 
+qlist was tested on Debian, Gentoo and ArchLinux.
+
 ## Usage
 
 qlist [options] package [pattern to search]
@@ -19,10 +21,11 @@ Built-in filters:
 
 ### Others options
 
-* **-g** pattern    - like as grep
+* **-g** *pattern*  - like as grep
 * **--all**         - doesn't omit empty directories
 * **--case**        - do not ignore case letter
 * **--all**         - print all files and directories belongs to the package
+* **--os** *name*   - do not use Linux::Distribution to determine Operating System
 
 ### Rest options
 * **-h|--help**             - print help
