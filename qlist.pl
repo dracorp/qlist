@@ -27,7 +27,7 @@ use Term::ANSIColor;
 
 # About the program
 my $NAME        = 'qlist';
-my $AUTHOR      = 'Piotr Rogoża';
+my $AUTHOR      = 'Piotr Rogoza';
 my $EMAIL       = 'piotr.r.public@gmail.com';
 our $VERSION    = 1.6.0;
 
@@ -272,7 +272,7 @@ sub generate_list_debian { #{{{2
         or croak qq{Cann't execute dpkg: $ERRNO\n};
     @{$list_files_ref} = <$fh>;
     close $fh or croak qq{Cann't close program dpkg: $ERRNO\n};
-    # usuń pierwszy element, równy '/.'
+    # remove first element equal '/.'
     shift @{$list_files_ref};
     @{$list_files_ref} = map { my $tmp = $_; chomp $tmp; $tmp } @{$list_files_ref};
     return $list_files_ref;
@@ -433,10 +433,10 @@ else {
 }
 if ( @{$list_files} > 0 ) {
 
-    # filtrowanie listy wg. np. wbudowanych wzorców i wyszukiwanego wzorca
+    # filters list by built-in pattern
     filter_list( $pattern, $list_files );
 
-    # szukanie w zawartości i drukowanie lub same drukowanie na ekranie
+    # search in content
     if ( $options{grep} ) {
         grep_list( $grep_pattern, $list_files );
     }
@@ -562,7 +562,7 @@ Program is distributed as-is
 
 =head1 TODO
 
-As in Gentoo: Pod gentoo wystarczy podac fragment nazwy pakietu i domyslnie wyszuka wsrod wszystkich pasujacych.
+As in Gentoo: You can give only fragment name of package and search in all matched
 
 =head1 AUTHOR
 

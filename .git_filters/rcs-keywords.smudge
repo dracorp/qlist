@@ -17,33 +17,39 @@
 #   smudge = .git_filters/rcs-keywords.smudge %f
 #
 # Copyright (c) 2009-2011 Turon Technologies, Inc.  All rights reserved.
+use Encode;
+use utf8;
 
-use warnings;
-use strict;
-
-my $path = shift;
+$path = shift;
 $path =~ /.*\/(.*)/;
-my $filename = $1;
+$filename = $1;
 
-if ( length($filename) == 0 ) {
+if (0 == length($filename)) {
     $filename = $path;
 }
 
+sub trimClean {
+    my $s = shift;
+    $s =~ s/^\s+|\s+$//g;
+    $s = Encode::decode("utf-8", $s);
+    $s =~ tr/ąćęłńóśźżĄĆĘŁŃÓŚŹŻ/acelnoszzACELNOSZZ/;
+    return $s;
+}
 # Need to grab filename and to use git log for this to be accurate.
-my $rev = `git log -1 -- $path | head -n 3`;
+$rev = `git log -1 -- $path | head -n 3`;
 $rev =~ /^Author:\s*(.*)\s*$/m;
-my $author = $1;
+$author = $1;
 $author =~ /\s*(.*)\s*<.*/;
-my $name = $1;
+$name = $1;
+$name = trimClean($name);
 $rev =~ /^Date:\s*(.*)\s*$/m;
-my $date = $1;
+$date = $1;
 $rev =~ /^commit (.*)$/m;
-my $revision = `git rev-list HEAD | wc -l`;
-my $ident = $1;
+$revision = `git rev-list HEAD | wc -l`;
+$ident = $1;
 
 # clean
 chomp $revision;
-chomp $author;
 
 while (<STDIN>) {
     s/\$Date[^\$]*\$/\$Date: $date \$/;
