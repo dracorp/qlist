@@ -7,15 +7,11 @@
 #   DESCRIPTION: Lists content of package and filters with buil-in input pattern.
 #               Based on qlist from Gentoo package app-portage/portage-utils
 #
-#       AUTHOR: Piotr Rogoża (dracorp), piotr.r.public@gmail.com
-#           Id: $Id$
-#         Date: $Date$
-#     Revision: $Revision: 16
- $
+#       AUTHOR: Piotr Rogoza (dracorp), piotr.r.public@gmail.com
+#         DATE: $Date$
+#     REVISION: $Revision$
+#           ID: $Id$
 #===============================================================================
-
-eval 'exec /usr/bin/perl -wS $0 ${1+"$@"}'
-    if $running_under_some_shell;
 
 use strict;
 use warnings;
@@ -570,6 +566,6 @@ As in Gentoo: Pod gentoo wystarczy podac fragment nazwy pakietu i domyslnie wysz
 
 =head1 AUTHOR
 
-Piotr Rogoża <piotr.r.public@gmail.com>
+Piotr Rogoza <piotr.r.public@gmail.com>
 
 =cut
