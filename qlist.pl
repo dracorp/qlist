@@ -1,21 +1,13 @@
 #!/usr/bin/env perl
 #===============================================================================
-#         FILE:  qlist.pl
-#
-#        USAGE:  ./qlist.pl package pattern [options]
-#
-#   DESCRIPTION: Lists content of package and filters with buil-in input pattern.
-#               Based on qlist from Gentoo package app-portage/portage-utils
-#
 #       AUTHOR: Piotr Rogoza (dracorp), piotr.r.public@gmail.com
-#         DATE: $Date$
-#     REVISION: $Revision$
-#           ID: $Id$
+#         DATE: $Date: Wed Jan 21 18:48:59 2015 +0100 $
+#     REVISION: $Revision: 21 $
+#           ID: $Id: qlist.pl 21 Wed Jan 21 18:48:59 2015 +0100 Piotr Rogoza $
 #===============================================================================
 
 use strict;
 use warnings;
-#use v5.10;
 
 use English '-no_match_vars';
 use Carp;                               # to replace die & warn by croak & carp
@@ -28,7 +20,6 @@ use Term::ANSIColor;
 # About the program
 my $NAME        = 'qlist';
 my $AUTHOR      = 'Piotr Rogoza';
-my $EMAIL       = 'piotr.r.public@gmail.com';
 our $VERSION    = 1.6.0;
 
 # Global read-only variables
@@ -37,56 +28,7 @@ Readonly my $TAB   => qq{\t};
 
 # Startup options
 my (%options);
-GetOptions(
-    'b|bin'            => \$options{binary},     # list binary
-    'm|man'            => \$options{man},        # list pages' man
-    'd|doc'            => \$options{doc},        # list doc
-    'i|info'           => \$options{info},       # list pages' info
-    'e|etc'            => \$options{etc},        # list /etc
-    'l|locale'         => \$options{locale},     # list locales
-    'p|picture'        => \$options{picture},    # list pictures
-    'o|other'          => \$options{other},      # list other, not matched to above
-    'g|grep=s'         => \$options{grep},       # search in contents of files
-    'no-color|nocolor' => \$options{nocolor},    # do not color matched
-    'c|color'          => \$options{color},      # colors matched
-    'case'             => \$options{case},       # do not ignore case letter
-    'all'              => \$options{all},        # print all, by default omit directories
-    'o|os=s'           => \$options{os},
-    'h|help'           => \&help
-) or die("Error in command line arguments. Try $PROGRAM_NAME --help");
-if(!$options{os}){
-    require Linux::Distribution;
-    Linux::Distribution->import(qw(distribution_name));
-}
 #{{{ Subroutines
-sub error { #{{{2
-#===  FUNCTION  ================================================================
-#         NAME: error
-#   PARAMETERS: Error message to display
-#      RETURNS: none
-#  DESCRIPTION: Displays error and exit
-#===============================================================================
-    my ($ERROR) = @_;
-    print "$PROGRAM_NAME $ERROR\n";
-    print "Try `$PROGRAM_NAME --help' for more information.\n";
-    exit 1;
-} # end of sub error }}}
-sub max_length_str { #{{{2
-#===  FUNCTION  ================================================================
-#         NAME: max_length_str
-#      PURPOSE: Return maximal length for list
-#   PARAMETERS: ref to array
-#      RETURNS: int
-#===============================================================================
-    my ($array_ref) = @_;
-    my $max_length = 0;
-    foreach my $string ( @{$array_ref} ) {
-        if ( length $string > $max_length ) {
-            $max_length = length $string;
-        }
-    }
-    return $max_length;
-} ## end sub max_length_str }}}
 sub usage { #{{{2
 #===  FUNCTION  ================================================================
 #         NAME: usage
@@ -150,7 +92,7 @@ sub filter_list { #{{{2
         if ( $options{picture} ) {
             $regex = $regex ? $regex . q{|} . $picture : $picture;
         }
-    } ## end else [ if ( $options{other} )]
+    } # end else [ if ( $options{other} )]
     if ($regex) {
         if ( $options{other} ) {
 
@@ -162,12 +104,12 @@ sub filter_list { #{{{2
             # filters list basis of built-in patterns
             @{$list_files_ref} = grep {/$regex/msx} @{$list_files_ref};
         }
-    } ## end if ($regex)
+    } # end if ($regex)
     if ( $pattern and not $options{grep} ) {
 
         # if given pattern to find and no given -g option
         @{$list_files_ref} = grep {/$pattern/} @{$list_files_ref};
-    } ## end if ( $pattern and not ...)
+    } # end if ( $pattern and not ...)
 
     # remove empty directories unless given --all option
     if ( !$options{all} ) {
@@ -340,11 +282,11 @@ sub grep_list { #{{{2
                     }
                     chomp $row;
                     $result->{$file}->{$INPUT_LINE_NUMBER} = $row;
-                } ## end if ( $row =~ m{$pattern})
+                } # end if ( $row =~ m{$pattern})
             }
             close $fh
                 or croak q{Couldn't close the file: }, $file, "\n";
-        } ## end if ( -T $file && -r $file)
+        } # end if ( -T $file && -r $file)
     }
     my @files = keys %{$result};
     $max_length_filename++;    # for space
@@ -362,7 +304,35 @@ sub grep_list { #{{{2
     return;
 } # end sub grep_list }}}
 #}}}
+GetOptions(
+    'b|bin'            => \$options{binary},     # list binary
+    'm|man'            => \$options{man},        # list pages' man
+    'd|doc'            => \$options{doc},        # list doc
+    'i|info'           => \$options{info},       # list pages' info
+    'e|etc'            => \$options{etc},        # list /etc
+    'l|locale'         => \$options{locale},     # list locales
+    'p|picture'        => \$options{picture},    # list pictures
+    'o|other'          => \$options{other},      # list other, not matched to above
+    'g|grep=s'         => \$options{grep},       # search in contents of files
+    'no-color|nocolor' => \$options{nocolor},    # do not color matched
+    'c|color'          => \$options{color},      # colors matched
+    'case'             => \$options{case},       # do not ignore case letter
+    'all'              => \$options{all},        # print all, by default omit directories
+    'o|os=s'           => \$options{os},
+    'h|help'           => \$options{help},
+)
+    or usage and exit;
+#-------------------------------------------------------------------------------
 #  Main program
+#-------------------------------------------------------------------------------
+if ( $options{help} ){
+    help;
+    exit;
+}
+unless ( @ARGV ){
+    usage;
+    exit;
+}
 my ( $package, $pattern, $grep_pattern );
 
 # get name of package and optional pattern to filter list
@@ -379,7 +349,7 @@ if ($rawpackage) {
         print q{Package isn't defined or name you entered isn't allowed}, "\n";
         exit 1;
     }
-} ## end if ($rawpackage)
+} # end if ($rawpackage)
 
 if ($rawgrep_pattern) {
     ($grep_pattern) = $rawgrep_pattern =~ m{^[%_~\#\/\\|\w\s._-]+}gxms;
@@ -391,7 +361,7 @@ if ($rawgrep_pattern) {
         $grep_pattern = eval { qr{$grep_pattern}ioxms; };
         croak $EVAL_ERROR if $EVAL_ERROR;
     }
-} ## end if ($rawgrep_pattern)
+} # end if ($rawgrep_pattern)
 
 if ($rawpattern) {
     ($pattern) = $rawpattern =~ m{^[~\\/|\w._-]+}gxms;
@@ -403,8 +373,12 @@ if ($rawpattern) {
         $pattern = eval { qr{$pattern}ioxms; };
         croak $EVAL_ERROR if $EVAL_ERROR;
     }
-} ## end if ($rawpattern)
+} # end if ($rawpattern)
 
+if(!$options{os}){
+    require Linux::Distribution;
+    Linux::Distribution->import(qw(distribution_name));
+}
 # Take distribution name from command line
 my $distribution_name;
 # sub from Linux::Distribution
@@ -422,15 +396,16 @@ if ( !$distribution_name ) {
     exit 1;
 }
 $distribution_sub = \&{'generate_list_' . $distribution_name};
-my $list_files       = [];                                      # ref of array, list of files belong to package
+my $list_files       = [];                      # ref of array, list of files belong to package
 
 if ( exists &$distribution_sub ) {
     $list_files = &$distribution_sub($package);
-} ## end if ( exists &$distribution_sub)
+}
 else {
     print q{I'm sorry but this system isn't supported}, "\n";
-    exit;
+    exit 1;
 }
+
 if ( @{$list_files} > 0 ) {
 
     # filters list by built-in pattern
@@ -443,7 +418,7 @@ if ( @{$list_files} > 0 ) {
     else {
         print_list($list_files);
     }
-} ## end if ( @{$list_files} > ...)
+} # end if ( @{$list_files} > ...)
 
 __END__
 
